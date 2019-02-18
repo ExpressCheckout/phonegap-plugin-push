@@ -376,6 +376,7 @@
         if(![weakSelf usesFCM]) {
             [weakSelf registerWithToken: token];
         }
+        [weakSelf registerAPNSToken: token];
     }];
 
 
@@ -553,6 +554,19 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 }
 
+// 2/18/2019 amatchneer added this because when FCM is used, it eagerly sends a
+// "registration" event once the FCM registration ID is established, but it completely
+// gets rid of an event for when push notifications are actually approved, which we need
+// to be able to detect in certain use cases.
+-(void)registerAPNSToken:(NSString*)token; {
+    // Send result to trigger 'registration' event but keep callback
+    NSMutableDictionary* message = [NSMutableDictionary dictionaryWithCapacity:2];
+    [message setObject:token forKey:@"registrationId"];
+    [message setObject:@"APNS" forKey:@"registrationType"];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+}
 
 -(void)failWithMessage:(NSString *)myCallbackId withMsg:(NSString *)message withError:(NSError *)error
 {
